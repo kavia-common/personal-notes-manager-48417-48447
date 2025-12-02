@@ -1,47 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React from 'react';
 import './App.css';
+import './index.css';
+import Sidebar from './components/Layout/Sidebar';
+import MainPanel from './components/Layout/MainPanel';
+import { useNotes } from './hooks/useNotes';
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  /**
+   * Note taking app main shell.
+   * Renders a responsive layout with a sidebar and an editor panel,
+   * using the useNotes hook for state, persistence, and API/localStorage abstraction.
+   */
+  const notesApi = useNotes();
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app-root" role="application" aria-label="Personal Notes Manager">
+      <div className="app-gradient-bg" aria-hidden="true" />
+      {notesApi.errorBanner && (
+        <div className={`toast ${notesApi.errorBanner.type}`} role="status" aria-live="polite">
+          <div className="toast-message">{notesApi.errorBanner.message}</div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={notesApi.dismissError}
+            aria-label="Dismiss notification"
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      <div className={`layout ${notesApi.isSidebarOpen ? '' : 'sidebar-collapsed'}`}>
+        <Sidebar
+          notes={notesApi.filteredNotes}
+          selectedId={notesApi.selectedId}
+          onSelect={notesApi.selectNote}
+          onCreate={notesApi.createNote}
+          search={notesApi.search}
+          setSearch={notesApi.setSearch}
+          isSidebarOpen={notesApi.isSidebarOpen}
+          setIsSidebarOpen={notesApi.setIsSidebarOpen}
+          isApiMode={notesApi.isApiMode}
+        />
+        <MainPanel
+          selectedNote={notesApi.selectedNote}
+          onChange={notesApi.updateSelectedNote}
+          onDelete={notesApi.deleteSelectedNote}
+          lastSavedAt={notesApi.lastSavedAt}
+          isSaving={notesApi.isSaving}
+        />
+      </div>
     </div>
   );
 }
